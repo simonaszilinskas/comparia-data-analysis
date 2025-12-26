@@ -63,20 +63,21 @@ pip install -r requirements.txt
 
 1. Run the Streamlit app:
 ```bash
-streamlit run Home.py
+streamlit run app.py
 ```
 
 2. The app will automatically download the dataset on first run (cached for subsequent runs)
 
-3. Navigate between pages using the sidebar:
-   - **Home (🔍)**: Search and browse conversations
-   - **Visualizations (📊)**: Explore dataset statistics and charts
+3. Navigate between pages using the sidebar navigation:
+   - **app** (🔍): Search and browse conversations
+   - **Visualizations**: View dataset statistics and charts
+   - **Explore Data**: Advanced filtering and data exploration
 
 4. Use filters in the sidebar to refine results
 
 5. Click on conversations to expand and view details
 
-6. Export filtered results using the download buttons (Visualizations page)
+6. Export filtered results using the download buttons (Explore Data page)
 
 ## Dataset Statistics
 
