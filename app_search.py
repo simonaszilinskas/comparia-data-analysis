@@ -213,52 +213,26 @@ def main():
     st.markdown('<div class="main-title">🔍 compar:IA Search</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Search conversations and compare model responses with user preferences</div>', unsafe_allow_html=True)
 
-    # Sidebar settings
-    with st.sidebar:
-        st.header("⚙️ Settings")
-
-        sample_size = st.selectbox(
-            "Dataset size",
-            options=[5000, 10000, 25000, 50000, 100000],
-            index=1,
-            format_func=lambda x: f"{x:,} conversations"
-        )
-
-        st.info(f"Loading {sample_size:,} conversations for fast search")
-
-        st.markdown("---")
-        st.markdown("### About")
-        st.markdown("Search through conversations from the compar:IA model comparison platform. Results show which model users preferred when available.")
-
     # Load data
+    sample_size = 10000  # Fixed sample size
     with st.spinner("Loading data..."):
         df_conversations = load_conversations(sample_size)
         df_votes = load_votes()
 
-    # Main search box
-    st.markdown("### Search in conversations")
-    search_term = st.text_input(
-        "",
-        placeholder="Enter keywords to search in conversations (e.g., 'Python', 'recipe', 'mathematics')...",
-        key="search",
-        label_visibility="collapsed"
-    )
+    # Filters in sidebar
+    with st.sidebar:
+        st.header("🔧 Filters")
 
-    # Filters
-    st.markdown("### 🔧 Filters")
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
         # Get unique models
         all_models = sorted(set(df_conversations['model_a_name'].unique()) |
                           set(df_conversations['model_b_name'].unique()))
         selected_models = st.multiselect(
-            "Only show conversations with these models",
+            "Models",
             options=all_models,
-            default=[]
+            default=[],
+            help="Filter conversations by model"
         )
 
-    with col2:
         # Get unique categories
         all_categories = []
         for cat_list in df_conversations['categories']:
@@ -268,18 +242,43 @@ def main():
         unique_categories = sorted(set(all_categories)) if all_categories else []
 
         selected_categories = st.multiselect(
-            "Only show conversations with these categories",
+            "Categories",
             options=unique_categories,
-            default=[]
+            default=[],
+            help="Filter conversations by category"
         )
 
-    with col3:
-        show_only_voted = st.checkbox("Only show conversations with user votes", value=False)
+        show_only_voted = st.checkbox("Only show voted conversations", value=False, help="Show only conversations with user votes")
 
-    # Search
-    if search_term:
+    # Initialize active search in session state if not exists
+    if 'active_search' not in st.session_state:
+        st.session_state.active_search = ''
+
+    # Main search box with button
+    with st.form(key="search_form"):
+        col1, col2 = st.columns([6, 1])
+        with col1:
+            search_term = st.text_input(
+                "",
+                value=st.session_state.active_search,
+                placeholder="Enter keywords to search in conversations (e.g., 'Python', 'recipe', 'mathematics')...",
+                key="search",
+                label_visibility="collapsed"
+            )
+        with col2:
+            search_button = st.form_submit_button("🔍 Search", use_container_width=True)
+
+    # Update search term in session state when search is triggered
+    if search_button:
+        st.session_state.active_search = search_term
+
+    # Get the active search term
+    active_search = st.session_state.active_search
+
+    # Search (triggered by button or Enter)
+    if active_search:
         with st.spinner("Searching..."):
-            results = search_conversations(df_conversations, search_term)
+            results = search_conversations(df_conversations, active_search)
 
             # Apply filters
             if len(results) > 0:
