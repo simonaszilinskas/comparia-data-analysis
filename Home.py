@@ -5,9 +5,10 @@ from datetime import datetime
 
 # Page config
 st.set_page_config(
-    page_title="compar:IA Search",
-    page_icon="🔍",
-    layout="wide"
+    page_title="compar:IA - Home",
+    page_icon="🏠",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # Custom CSS
@@ -210,7 +211,7 @@ def display_conversation(row, votes_df, result_num=None):
 
 def main():
     # Title
-    st.markdown('<div class="main-title">🔍 compar:IA Search</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">🔍 compar:IA</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Search conversations and compare model responses with user preferences</div>', unsafe_allow_html=True)
 
     # Load data
@@ -221,6 +222,8 @@ def main():
 
     # Filters in sidebar
     with st.sidebar:
+        st.info("💡 Explore dataset statistics and charts in the **📊 Visualizations** page!")
+        st.markdown("---")
         st.header("🔧 Filters")
 
         # Get unique models

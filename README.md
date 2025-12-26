@@ -8,17 +8,15 @@ This app uses the `ministere-culture/comparia-conversations` dataset from Huggin
 
 ## Features
 
-### 🔍 Search & Filtering
-- **Text search**: Search within conversation content and summaries
-- **Keyword search**: Find conversations by specific keywords
-- **Model filtering**: Filter by Model A or Model B
-- **Category filtering**: Browse conversations by topic (76 categories)
-- **Language filtering**: Filter by language (130+ languages, predominantly French)
-- **Date range**: Select conversations from specific time periods
-- **Conversation turns**: Filter by conversation length
-- **Comparison mode**: Filter by mode (random, custom, big-vs-small, reasoning, etc.)
+### 🏠 Home Page - Search & Browse
+- **Search conversations**: Find conversations by keywords in content, summaries, and messages
+- **Model filtering**: Filter by specific AI models
+- **Category filtering**: Browse conversations by topic categories
+- **Vote filtering**: Show only conversations with user preference votes
+- **Side-by-side comparison**: View Model A and Model B responses with vote indicators
+- **Pagination**: Browse through search results efficiently
 
-### 📊 Dynamic Visualizations
+### 📊 Visualizations Page
 
 **Overview Tab:**
 - Conversation length distribution
@@ -39,13 +37,16 @@ This app uses the `ministere-culture/comparia-conversations` dataset from Huggin
 - Energy consumption timeline
 - Sustainability metrics
 
-### 💬 Conversation Viewer
-- Expandable conversation cards
-- Side-by-side comparison of Model A and Model B responses
-- Metadata display (tokens, energy, duration)
-- Summary and keyword highlighting
+**Advanced Filtering:**
+- Text search in conversations
+- Model filtering (Model A and Model B)
+- Category and language filtering
+- Date range selection
+- Conversation turns filtering
+- Comparison mode filtering
+- Keyword search
 
-### 📥 Export Functionality
+### 📥 Export Functionality (Visualizations Page)
 - Export filtered results as CSV
 - Export filtered results as JSON
 - Downloadable datasets for further analysis
@@ -62,18 +63,20 @@ pip install -r requirements.txt
 
 1. Run the Streamlit app:
 ```bash
-streamlit run app.py
+streamlit run Home.py
 ```
 
 2. The app will automatically download the dataset on first run (cached for subsequent runs)
 
-3. Use the sidebar to apply filters and search
+3. Navigate between pages using the sidebar:
+   - **Home (🔍)**: Search and browse conversations
+   - **Visualizations (📊)**: Explore dataset statistics and charts
 
-4. Explore visualizations in the main area
+4. Use filters in the sidebar to refine results
 
 5. Click on conversations to expand and view details
 
-6. Export filtered results using the download buttons
+6. Export filtered results using the download buttons (Visualizations page)
 
 ## Dataset Statistics
 
