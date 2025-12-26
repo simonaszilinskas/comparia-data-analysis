@@ -5,7 +5,7 @@ from datetime import datetime
 
 # Page config
 st.set_page_config(
-    page_title="Comparia Search",
+    page_title="compar:IA Search",
     page_icon="🔍",
     layout="wide"
 )
@@ -210,7 +210,7 @@ def display_conversation(row, votes_df, result_num=None):
 
 def main():
     # Title
-    st.markdown('<div class="main-title">🔍 Comparia Search</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">🔍 compar:IA Search</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Search conversations and compare model responses with user preferences</div>', unsafe_allow_html=True)
 
     # Sidebar settings
@@ -228,7 +228,7 @@ def main():
 
         st.markdown("---")
         st.markdown("### About")
-        st.markdown("Search through conversations from the Comparia model comparison platform. Results show which model users preferred when available.")
+        st.markdown("Search through conversations from the compar:IA model comparison platform. Results show which model users preferred when available.")
 
     # Load data
     with st.spinner("Loading data..."):

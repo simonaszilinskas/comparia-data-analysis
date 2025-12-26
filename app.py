@@ -9,7 +9,7 @@ from collections import Counter
 
 # Page config
 st.set_page_config(
-    page_title="Comparia Conversations Explorer",
+    page_title="compar:IA Conversations Explorer",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -514,8 +514,8 @@ def display_conversation(row):
                         st.markdown(content[:500] + "..." if len(content) > 500 else content)
 
 def main():
-    st.markdown('<div class="main-header">📊 Comparia Conversations Explorer</div>', unsafe_allow_html=True)
-    st.markdown("Explore and analyze conversations from the Comparia model comparison platform")
+    st.markdown('<div class="main-header">📊 compar:IA Conversations Explorer</div>', unsafe_allow_html=True)
+    st.markdown("Explore and analyze conversations from the compar:IA model comparison platform")
 
     # Sidebar - Data size selector (at the very top)
     st.sidebar.header("⚙️ Settings")

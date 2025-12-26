@@ -1,6 +1,6 @@
-# Comparia Conversations Explorer
+# compar:IA Conversations Explorer
 
-An interactive Streamlit application for exploring and analyzing conversations from the [Comparia](https://comparia.ai) model comparison platform.
+An interactive Streamlit application for exploring and analyzing conversations from the [compar:IA](https://comparia.ai) model comparison platform.
 
 ## Dataset
 
@@ -101,4 +101,4 @@ This tool is designed to help researchers:
 
 ## License
 
-This project uses the Comparia dataset which is publicly available on Hugging Face.
+This project uses the compar:IA dataset which is publicly available on Hugging Face.
