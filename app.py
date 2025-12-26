@@ -212,7 +212,7 @@ def display_conversation(row, votes_df, result_num=None):
 def main():
     # Title
     st.markdown('<div class="main-title">🔍 compar:IA</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Search conversations and compare model responses with user preferences</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Explore and analyze AI model conversations</div>', unsafe_allow_html=True)
 
     # Load data
     sample_size = 10000  # Fixed sample size
@@ -220,10 +220,21 @@ def main():
         df_conversations = load_conversations(sample_size)
         df_votes = load_votes()
 
+    # Tab navigation at the top
+    tab1, tab2 = st.tabs(["🔍 Search", "📊 Visualizations"])
+
+    with tab1:
+        # SEARCH TAB
+        render_search_tab(df_conversations, df_votes)
+
+    with tab2:
+        # VISUALIZATIONS TAB
+        render_visualizations_tab(df_conversations)
+
+def render_search_tab(df_conversations, df_votes):
+    """Render the search tab"""
     # Filters in sidebar
     with st.sidebar:
-        st.info("📊 Use the page navigation above to explore visualizations and data analysis!")
-        st.markdown("---")
         st.header("🔧 Filters")
 
         # Get unique models
@@ -377,6 +388,59 @@ def main():
                 display_conversation(row, df_votes, idx)
         else:
             st.warning("No conversations match the selected filters.")
+
+def render_visualizations_tab(df):
+    """Render the visualizations tab"""
+    st.markdown("### 📊 Dataset Visualizations")
+
+    # Basic statistics
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Total Conversations", f"{len(df):,}")
+
+    with col2:
+        unique_models = len(set(df['model_a_name'].unique()) | set(df['model_b_name'].unique()))
+        st.metric("Unique Models", unique_models)
+
+    with col3:
+        # Count unique categories
+        all_categories = []
+        for cat_list in df['categories']:
+            if cat_list is not None and hasattr(cat_list, '__iter__') and len(cat_list) > 0:
+                cats = list(cat_list) if not isinstance(cat_list, list) else cat_list
+                all_categories.extend(cats)
+        st.metric("Categories", len(set(all_categories)))
+
+    with col4:
+        avg_turns = df['conv_turns'].mean() if 'conv_turns' in df.columns else 0
+        st.metric("Avg Conversation Turns", f"{avg_turns:.1f}")
+
+    st.markdown("---")
+
+    # Top models
+    st.markdown("### 🤖 Most Frequent Models")
+    model_counts = pd.concat([df['model_a_name'], df['model_b_name']]).value_counts().head(10)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.bar_chart(model_counts)
+
+    with col2:
+        st.dataframe(
+            model_counts.reset_index().rename(columns={'index': 'Model', 0: 'Count'}),
+            hide_index=True,
+            use_container_width=True
+        )
+
+    st.markdown("---")
+
+    # Categories distribution
+    st.markdown("### 🏷️ Top Categories")
+    if all_categories:
+        cat_counts = pd.Series(all_categories).value_counts().head(15)
+        st.bar_chart(cat_counts)
 
 if __name__ == "__main__":
     main()

@@ -8,7 +8,9 @@ This app uses the `ministere-culture/comparia-conversations` dataset from Huggin
 
 ## Features
 
-### 🏠 Home Page - Search & Browse
+The app has two main tabs accessible from the top of the page:
+
+### 🔍 Search Tab
 - **Search conversations**: Find conversations by keywords in content, summaries, and messages
 - **Model filtering**: Filter by specific AI models
 - **Category filtering**: Browse conversations by topic categories
@@ -16,40 +18,11 @@ This app uses the `ministere-culture/comparia-conversations` dataset from Huggin
 - **Side-by-side comparison**: View Model A and Model B responses with vote indicators
 - **Pagination**: Browse through search results efficiently
 
-### 📊 Visualizations Page
-
-**Overview Tab:**
-- Conversation length distribution
-- Comparison mode distribution
-- Timeline of conversations over time
-
-**Models Tab:**
-- Top models by frequency
-- Energy efficiency ranking (tokens per kWh)
-
-**Topics Tab:**
-- Top categories breakdown
-- Language distribution
-- Most common keywords
-
-**Energy Tab:**
-- Energy consumption by category
-- Energy consumption timeline
-- Sustainability metrics
-
-**Advanced Filtering:**
-- Text search in conversations
-- Model filtering (Model A and Model B)
-- Category and language filtering
-- Date range selection
-- Conversation turns filtering
-- Comparison mode filtering
-- Keyword search
-
-### 📥 Export Functionality (Visualizations Page)
-- Export filtered results as CSV
-- Export filtered results as JSON
-- Downloadable datasets for further analysis
+### 📊 Visualizations Tab
+- **Dataset statistics**: Total conversations, unique models, categories, and average turns
+- **Top models**: Most frequently used AI models in conversations
+- **Category breakdown**: Distribution of conversation topics
+- **Interactive charts**: Visual exploration of the dataset
 
 ## Installation
 
@@ -68,16 +41,13 @@ streamlit run app.py
 
 2. The app will automatically download the dataset on first run (cached for subsequent runs)
 
-3. Navigate between pages using the sidebar navigation:
-   - **app** (🔍): Search and browse conversations
-   - **Visualizations**: View dataset statistics and charts
-   - **Explore Data**: Advanced filtering and data exploration
+3. Navigate between tabs at the top of the page:
+   - **🔍 Search**: Search and browse conversations with filters
+   - **📊 Visualizations**: Explore dataset statistics and charts
 
-4. Use filters in the sidebar to refine results
+4. In the Search tab, use filters in the sidebar to refine results
 
-5. Click on conversations to expand and view details
-
-6. Export filtered results using the download buttons (Explore Data page)
+5. Click on conversations to expand and view details side-by-side
 
 ## Dataset Statistics
 
