@@ -31,6 +31,10 @@ st.markdown("""
     [data-testid="stSidebarNav"] li:first-child {
         display: none;
     }
+    /* Align button text to the left */
+    [data-testid="stSidebar"] button[kind="secondary"] p {
+        text-align: left !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -97,8 +101,26 @@ def load_votes():
         sys.stderr = old_stderr
 
 def main():
-    # Logo in sidebar
+    # Sidebar with dataset links and logo
     with st.sidebar:
+        st.markdown("### 📂 Access Raw Datasets")
+        st.link_button(
+            "compar:IA-conversations",
+            "https://huggingface.co/datasets/ministere-culture/comparia-conversations",
+            use_container_width=True
+        )
+        st.link_button(
+            "compar:IA-votes",
+            "https://huggingface.co/datasets/ministere-culture/comparia-votes",
+            use_container_width=True
+        )
+        st.link_button(
+            "compar:IA-reactions",
+            "https://huggingface.co/datasets/ministere-culture/comparia-reactions",
+            use_container_width=True
+        )
+
+        st.markdown("---")
         st.image("english-logo.png", use_container_width=True)
 
     # Title

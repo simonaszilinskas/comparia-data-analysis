@@ -29,6 +29,10 @@ st.markdown("""
     [data-testid="stSidebarNav"] li:first-child {
         display: none;
     }
+    /* Align button text to the left */
+    [data-testid="stSidebar"] button[kind="secondary"] p {
+        text-align: left !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -305,6 +309,25 @@ def main():
         )
 
         show_only_voted = st.checkbox("Only show voted conversations", value=False, help="Show only conversations with user votes or reactions")
+
+        # Dataset links
+        st.markdown("---")
+        st.markdown("### 📂 Access Raw Datasets")
+        st.link_button(
+            "compar:IA-conversations",
+            "https://huggingface.co/datasets/ministere-culture/comparia-conversations",
+            use_container_width=True
+        )
+        st.link_button(
+            "compar:IA-votes",
+            "https://huggingface.co/datasets/ministere-culture/comparia-votes",
+            use_container_width=True
+        )
+        st.link_button(
+            "compar:IA-reactions",
+            "https://huggingface.co/datasets/ministere-culture/comparia-reactions",
+            use_container_width=True
+        )
 
         # Logo at bottom of sidebar
         st.markdown("---")
