@@ -42,7 +42,65 @@ def load_conversations(sample_size=10000):
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     return df
 
+@st.cache_data
+def load_votes():
+    """Load votes and reactions datasets with user preferences"""
+    import os
+    import sys
+
+    # Suppress progress bars to avoid BrokenPipeError
+    old_stderr = sys.stderr
+    sys.stderr = open(os.devnull, 'w')
+
+    try:
+        # Load votes dataset
+        ds_votes = load_dataset('ministere-culture/comparia-votes', split='train')
+        df_votes = ds_votes.to_pandas()
+        df_votes['timestamp'] = pd.to_datetime(df_votes['timestamp'])
+        df_votes['source'] = 'votes'
+        votes_cols = df_votes[['conversation_pair_id', 'chosen_model_name', 'both_equal', 'source']]
+
+        # Load reactions dataset
+        ds_reactions = load_dataset('ministere-culture/comparia-reactions', split='train')
+        df_reactions = ds_reactions.to_pandas()
+        df_reactions['timestamp'] = pd.to_datetime(df_reactions['timestamp'])
+        df_reactions['source'] = 'reactions'
+
+        # Check what columns reactions dataset has and adapt
+        available_cols = ['conversation_pair_id', 'source']
+
+        if 'chosen_model_name' in df_reactions.columns:
+            available_cols.append('chosen_model_name')
+        elif 'winner' in df_reactions.columns:
+            df_reactions['chosen_model_name'] = df_reactions['winner']
+            available_cols.append('chosen_model_name')
+
+        if 'both_equal' in df_reactions.columns:
+            available_cols.append('both_equal')
+        elif 'tie' in df_reactions.columns:
+            df_reactions['both_equal'] = df_reactions['tie']
+            available_cols.append('both_equal')
+
+        reactions_cols = df_reactions[available_cols]
+
+        if 'chosen_model_name' not in reactions_cols.columns:
+            reactions_cols['chosen_model_name'] = None
+        if 'both_equal' not in reactions_cols.columns:
+            reactions_cols['both_equal'] = False
+
+        # Combine both datasets
+        df_combined = pd.concat([votes_cols, reactions_cols], ignore_index=True)
+
+        return df_combined
+    finally:
+        sys.stderr.close()
+        sys.stderr = old_stderr
+
 def main():
+    # Logo in sidebar
+    with st.sidebar:
+        st.image("english-logo.png", use_container_width=True)
+
     # Title
     st.markdown('<div class="main-title">📊 compar:IA</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Dataset visualizations and statistics</div>', unsafe_allow_html=True)
@@ -215,6 +273,75 @@ def main():
     top_models['First Seen'] = top_models['First Seen'].dt.date
     top_models['Last Seen'] = top_models['Last Seen'].dt.date
     st.dataframe(top_models, hide_index=True, use_container_width=True)
+
+    st.markdown("---")
+
+    # Votes and Reactions Analysis
+    st.markdown("### 🗳️ Votes & Reactions Analysis")
+
+    with st.spinner("Loading votes and reactions data..."):
+        df_votes = load_votes()
+
+    # Overview metrics
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        total_votes = len(df_votes)
+        st.metric("Total Votes & Reactions", f"{total_votes:,}")
+
+    with col2:
+        votes_only = len(df_votes[df_votes['source'] == 'votes'])
+        st.metric("Votes", f"{votes_only:,}")
+
+    with col3:
+        reactions_only = len(df_votes[df_votes['source'] == 'reactions'])
+        st.metric("Reactions", f"{reactions_only:,}")
+
+    with col4:
+        tie_rate = (df_votes['both_equal'].sum() / len(df_votes) * 100) if len(df_votes) > 0 else 0
+        st.metric("Tie Rate", f"{tie_rate:.1f}%")
+
+    st.markdown("#### 📊 Vote Distribution")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Outcome distribution
+        st.markdown("**Outcome Distribution**")
+        outcome_counts = pd.Series({
+            'Model Chosen': len(df_votes[df_votes['both_equal'] == False]),
+            'Tie (Both Equal)': df_votes['both_equal'].sum()
+        })
+        st.bar_chart(outcome_counts)
+
+    with col2:
+        # Source distribution
+        st.markdown("**Data Source**")
+        source_counts = df_votes['source'].value_counts()
+        st.bar_chart(source_counts)
+
+    st.markdown("#### 🏅 Model Win Rates")
+
+    # Calculate win rates per model
+    wins_by_model = df_votes[df_votes['both_equal'] == False]['chosen_model_name'].value_counts().head(15)
+
+    if len(wins_by_model) > 0:
+        col1, col2 = st.columns([2, 1])
+
+        with col1:
+            st.bar_chart(wins_by_model)
+
+        with col2:
+            st.dataframe(
+                pd.DataFrame({
+                    'Model': wins_by_model.index,
+                    'Wins': wins_by_model.values
+                }),
+                hide_index=True,
+                use_container_width=True
+            )
+    else:
+        st.info("No model win data available")
 
 if __name__ == "__main__":
     main()

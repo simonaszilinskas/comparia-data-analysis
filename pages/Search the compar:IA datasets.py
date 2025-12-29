@@ -42,12 +42,63 @@ def load_conversations(sample_size=10000):
 
 @st.cache_data
 def load_votes():
-    """Load votes dataset with user preferences"""
-    ds = load_dataset('ministere-culture/comparia-votes', split='train')
-    df = ds.to_pandas()
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    # Keep only relevant columns
-    return df[['conversation_pair_id', 'chosen_model_name', 'both_equal']]
+    """Load votes and reactions datasets with user preferences"""
+    import os
+    import sys
+
+    # Suppress progress bars to avoid BrokenPipeError
+    old_stderr = sys.stderr
+    sys.stderr = open(os.devnull, 'w')
+
+    try:
+        # Load votes dataset
+        ds_votes = load_dataset('ministere-culture/comparia-votes', split='train')
+        df_votes = ds_votes.to_pandas()
+        df_votes['timestamp'] = pd.to_datetime(df_votes['timestamp'])
+        df_votes = df_votes[['conversation_pair_id', 'chosen_model_name', 'both_equal']]
+
+        # Load reactions dataset
+        ds_reactions = load_dataset('ministere-culture/comparia-reactions', split='train')
+        df_reactions = ds_reactions.to_pandas()
+        df_reactions['timestamp'] = pd.to_datetime(df_reactions['timestamp'])
+
+        # Check what columns reactions dataset has and adapt
+        # Keep only conversation_pair_id initially
+        available_cols = ['conversation_pair_id']
+
+        # Map reaction columns to vote columns if they exist
+        if 'chosen_model_name' in df_reactions.columns:
+            available_cols.append('chosen_model_name')
+        elif 'winner' in df_reactions.columns:
+            df_reactions['chosen_model_name'] = df_reactions['winner']
+            available_cols.append('chosen_model_name')
+
+        if 'both_equal' in df_reactions.columns:
+            available_cols.append('both_equal')
+        elif 'tie' in df_reactions.columns:
+            df_reactions['both_equal'] = df_reactions['tie']
+            available_cols.append('both_equal')
+
+        # Select available columns
+        df_reactions = df_reactions[available_cols]
+
+        # Add missing columns with default values
+        if 'chosen_model_name' not in df_reactions.columns:
+            df_reactions['chosen_model_name'] = None
+        if 'both_equal' not in df_reactions.columns:
+            df_reactions['both_equal'] = False
+
+        # Combine both datasets
+        df_combined = pd.concat([df_votes, df_reactions], ignore_index=True)
+
+        # Remove duplicates, keeping the first occurrence
+        df_combined = df_combined.drop_duplicates(subset=['conversation_pair_id'], keep='first')
+
+        return df_combined
+    finally:
+        # Restore stderr
+        sys.stderr.close()
+        sys.stderr = old_stderr
 
 def search_conversations(df, search_term):
     """Search for conversations containing the search term"""
@@ -253,7 +304,11 @@ def main():
             help="Filter conversations by category"
         )
 
-        show_only_voted = st.checkbox("Only show voted conversations", value=False, help="Show only conversations with user votes")
+        show_only_voted = st.checkbox("Only show voted conversations", value=False, help="Show only conversations with user votes or reactions")
+
+        # Logo at bottom of sidebar
+        st.markdown("---")
+        st.image("english-logo.png", use_container_width=True)
 
     # Initialize active search in session state if not exists
     if 'active_search' not in st.session_state:
