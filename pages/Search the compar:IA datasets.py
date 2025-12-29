@@ -37,9 +37,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_data
-def load_conversations(sample_size=10000):
+def load_conversations():
     """Load conversations dataset"""
-    ds = load_dataset('ministere-culture/comparia-conversations', split=f'train[:{sample_size}]')
+    ds = load_dataset('ministere-culture/comparia-conversations', split='train')
     df = ds.to_pandas()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     return df
@@ -274,9 +274,8 @@ def main():
     st.markdown('<div class="subtitle">Search conversations and compare model responses</div>', unsafe_allow_html=True)
 
     # Load data
-    sample_size = 10000  # Fixed sample size
     with st.spinner("Loading data..."):
-        df_conversations = load_conversations(sample_size)
+        df_conversations = load_conversations()
         df_votes = load_votes()
 
     # Filters in sidebar
