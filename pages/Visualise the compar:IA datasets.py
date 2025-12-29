@@ -41,10 +41,21 @@ st.markdown("""
 @st.cache_data
 def load_conversations():
     """Load conversations dataset"""
-    ds = load_dataset('ministere-culture/comparia-conversations', split='train')
-    df = ds.to_pandas()
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    return df
+    import os
+    import sys
+
+    # Suppress progress bars to avoid BrokenPipeError
+    old_stderr = sys.stderr
+    sys.stderr = open(os.devnull, 'w')
+
+    try:
+        ds = load_dataset('ministere-culture/comparia-conversations', split='train')
+        df = ds.to_pandas()
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        return df
+    finally:
+        sys.stderr.close()
+        sys.stderr = old_stderr
 
 @st.cache_data
 def load_votes():
@@ -124,7 +135,7 @@ def main():
         st.image("english-logo.png", use_container_width=True)
 
     # Title
-    st.markdown('<div class="main-title">📊 compar:IA</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">Explore compar:IA datasets</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Dataset visualizations and statistics</div>', unsafe_allow_html=True)
 
     # Load data
