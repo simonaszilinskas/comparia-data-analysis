@@ -37,7 +37,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_data
-def load_conversations(sample_size=50000):
+def load_conversations(sample_size=10000):
     """Load conversations dataset"""
     import os
     import sys
@@ -284,8 +284,23 @@ def main():
     st.markdown('<div class="main-title">Explore compar:IA datasets</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Search conversations and compare model responses</div>', unsafe_allow_html=True)
 
+    # Settings in sidebar
+    with st.sidebar:
+        st.header("⚙️ Settings")
+
+        # Sample size selector
+        sample_size = st.number_input(
+            "Dataset Sample Size",
+            min_value=1000,
+            max_value=100000,
+            value=10000,
+            step=5000,
+            help="Number of conversations to load. Higher values provide more data but may slow down the app."
+        )
+
+        st.markdown("---")
+
     # Load data
-    sample_size = 50000
     with st.spinner("Loading data..."):
         df_conversations = load_conversations(sample_size)
         df_votes = load_votes()

@@ -39,7 +39,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_data
-def load_conversations(sample_size=50000):
+def load_conversations(sample_size=10000):
     """Load conversations dataset"""
     import os
     import sys
@@ -112,8 +112,23 @@ def load_votes():
         sys.stderr = old_stderr
 
 def main():
-    # Sidebar with dataset links and logo
+    # Settings in sidebar
     with st.sidebar:
+        st.header("⚙️ Settings")
+
+        # Sample size selector
+        sample_size = st.number_input(
+            "Dataset Sample Size",
+            min_value=1000,
+            max_value=100000,
+            value=10000,
+            step=5000,
+            help="Number of conversations to load. Higher values provide more data but may slow down the app."
+        )
+
+        st.markdown("---")
+
+        # Dataset links
         st.markdown("### 📂 Access Raw Datasets")
         st.link_button(
             "compar:IA-conversations",
@@ -139,7 +154,6 @@ def main():
     st.markdown('<div class="subtitle">Dataset visualizations and statistics</div>', unsafe_allow_html=True)
 
     # Load data
-    sample_size = 50000
     with st.spinner("Loading data..."):
         df = load_conversations(sample_size)
 
