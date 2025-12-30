@@ -1,3 +1,15 @@
+---
+title: French Arena Dataset Preview
+emoji: 🔍
+colorFrom: blue
+colorTo: purple
+sdk: streamlit
+sdk_version: 1.31.0
+app_file: app.py
+pinned: false
+license: apache-2.0
+---
+
 # compar:IA Conversations Explorer
 
 An interactive Streamlit application for exploring and analyzing conversations from the [compar:IA](https://comparia.ai) model comparison platform.
