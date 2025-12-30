@@ -49,7 +49,12 @@ def load_conversations(sample_size=10000):
     sys.stderr = open(os.devnull, 'w')
 
     try:
-        ds = load_dataset('ministere-culture/comparia-conversations', split=f'train[:{sample_size}]')
+        if sample_size is None:
+            # Load full dataset
+            ds = load_dataset('ministere-culture/comparia-conversations', split='train')
+        else:
+            # Load sample
+            ds = load_dataset('ministere-culture/comparia-conversations', split=f'train[:{sample_size}]')
         df = ds.to_pandas()
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         return df
@@ -117,12 +122,18 @@ def main():
         st.header("⚙️ Settings")
 
         # Sample size selector
-        sample_size = st.selectbox(
+        sample_size_option = st.selectbox(
             "Dataset Sample Size",
-            options=[1000, 5000, 10000, 25000, 50000, 100000],
-            index=2,  # Default to 10000
+            options=["1,000", "5,000", "10,000", "25,000", "50,000", "100,000", "250,000", "500,000", "Full Dataset"],
+            index=2,  # Default to 10,000
             help="Number of conversations to load. Higher values provide more data but may slow down the app."
         )
+
+        # Convert option to sample size
+        if sample_size_option == "Full Dataset":
+            sample_size = None  # Will load entire dataset
+        else:
+            sample_size = int(sample_size_option.replace(",", ""))
 
         st.markdown("---")
 
