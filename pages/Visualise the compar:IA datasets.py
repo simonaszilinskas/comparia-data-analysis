@@ -117,12 +117,10 @@ def main():
         st.header("⚙️ Settings")
 
         # Sample size selector
-        sample_size = st.number_input(
+        sample_size = st.selectbox(
             "Dataset Sample Size",
-            min_value=1000,
-            max_value=100000,
-            value=10000,
-            step=5000,
+            options=[1000, 5000, 10000, 25000, 50000, 100000],
+            index=2,  # Default to 10000
             help="Number of conversations to load. Higher values provide more data but may slow down the app."
         )
 
