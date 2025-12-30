@@ -38,23 +38,63 @@ st.markdown("""
 
 @st.cache_data
 def load_conversations(sample_size=10000):
-    """Load conversations dataset"""
+    """Load conversations dataset with memory optimizations"""
     import os
     import sys
+
+    # Get HuggingFace token from environment or Streamlit secrets
+    token = os.environ.get("HF_TOKEN")
+    if not token and hasattr(st, 'secrets') and 'HF_TOKEN' in st.secrets:
+        token = st.secrets["HF_TOKEN"]
 
     # Suppress progress bars to avoid BrokenPipeError
     old_stderr = sys.stderr
     sys.stderr = open(os.devnull, 'w')
 
     try:
+        # Only load columns we actually need for the search interface
+        columns_needed = [
+            'conversation_pair_id', 'model_a_name', 'model_b_name',
+            'timestamp', 'categories', 'conversation_a', 'conversation_b',
+            'summary_a', 'summary_b', 'language'
+        ]
+
         if sample_size is None:
-            # Load full dataset
-            ds = load_dataset('ministere-culture/comparia-conversations', split='train')
+            # Load full dataset with only needed columns
+            ds = load_dataset('ministere-culture/comparia-conversations', split='train', token=token)
         else:
             # Load sample
-            ds = load_dataset('ministere-culture/comparia-conversations', split=f'train[:{sample_size}]')
+            ds = load_dataset('ministere-culture/comparia-conversations', split=f'train[:{sample_size}]', token=token)
+
+        # Convert to pandas and optimize memory
         df = ds.to_pandas()
+
+        # Keep only needed columns if they exist
+        available_cols = [col for col in columns_needed if col in df.columns]
+        if available_cols:
+            df = df[available_cols]
+
+        # Optimize data types to reduce memory usage
         df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+        # Convert model names to category type (saves memory for repeated values)
+        if 'model_a_name' in df.columns:
+            df['model_a_name'] = df['model_a_name'].astype('category')
+        if 'model_b_name' in df.columns:
+            df['model_b_name'] = df['model_b_name'].astype('category')
+        if 'language' in df.columns:
+            df['language'] = df['language'].astype('category')
+
+        # Use PyArrow strings for better memory efficiency (20-40% savings on strings)
+        try:
+            if 'summary_a' in df.columns and df['summary_a'].dtype == 'object':
+                df['summary_a'] = df['summary_a'].astype('string[pyarrow]')
+            if 'summary_b' in df.columns and df['summary_b'].dtype == 'object':
+                df['summary_b'] = df['summary_b'].astype('string[pyarrow]')
+        except Exception:
+            # If pyarrow strings fail, continue without them
+            pass
+
         return df
     finally:
         sys.stderr.close()
@@ -66,19 +106,24 @@ def load_votes():
     import os
     import sys
 
+    # Get HuggingFace token from environment or Streamlit secrets
+    token = os.environ.get("HF_TOKEN")
+    if not token and hasattr(st, 'secrets') and 'HF_TOKEN' in st.secrets:
+        token = st.secrets["HF_TOKEN"]
+
     # Suppress progress bars to avoid BrokenPipeError
     old_stderr = sys.stderr
     sys.stderr = open(os.devnull, 'w')
 
     try:
         # Load votes dataset
-        ds_votes = load_dataset('ministere-culture/comparia-votes', split='train')
+        ds_votes = load_dataset('ministere-culture/comparia-votes', split='train', token=token)
         df_votes = ds_votes.to_pandas()
         df_votes['timestamp'] = pd.to_datetime(df_votes['timestamp'])
         df_votes = df_votes[['conversation_pair_id', 'chosen_model_name', 'both_equal']]
 
         # Load reactions dataset
-        ds_reactions = load_dataset('ministere-culture/comparia-reactions', split='train')
+        ds_reactions = load_dataset('ministere-culture/comparia-reactions', split='train', token=token)
         df_reactions = ds_reactions.to_pandas()
         df_reactions['timestamp'] = pd.to_datetime(df_reactions['timestamp'])
 
@@ -296,14 +341,15 @@ def main():
         # Sample size selector
         sample_size_option = st.selectbox(
             "Dataset Sample Size",
-            options=["1,000", "5,000", "10,000", "25,000", "50,000", "100,000", "250,000", "500,000", "Full Dataset"],
+            options=["1,000", "5,000", "10,000", "25,000", "50,000", "100,000", "250,000", "500,000", "Full Dataset (~360k)"],
             index=2,  # Default to 10,000
             help="Number of conversations to load. Higher values provide more data but may slow down the app."
         )
 
         # Convert option to sample size
-        if sample_size_option == "Full Dataset":
+        if "Full Dataset" in sample_size_option:
             sample_size = None  # Will load entire dataset
+            st.warning("⚠️ Loading the full dataset (~360k conversations) may take 2-3 minutes and use significant memory.")
         else:
             sample_size = int(sample_size_option.replace(",", ""))
 
@@ -349,24 +395,24 @@ def main():
         st.markdown("---")
         st.markdown("### 📂 Access Raw Datasets")
         st.link_button(
-            "compar:IA-conversations",
+            "📊 Conversations Dataset",
             "https://huggingface.co/datasets/ministere-culture/comparia-conversations",
             use_container_width=True
         )
         st.link_button(
-            "compar:IA-votes",
+            "🗳️ Votes Dataset",
             "https://huggingface.co/datasets/ministere-culture/comparia-votes",
             use_container_width=True
         )
         st.link_button(
-            "compar:IA-reactions",
+            "👍 Reactions Dataset",
             "https://huggingface.co/datasets/ministere-culture/comparia-reactions",
             use_container_width=True
         )
 
         # Logo at bottom of sidebar
         st.markdown("---")
-        st.image("english-logo.png", use_container_width=True)
+        st.image("english-logo.png", use_column_width=True)
 
     # Initialize active search in session state if not exists
     if 'active_search' not in st.session_state:
@@ -423,18 +469,18 @@ def main():
             if len(results) > 0:
                 st.success(f"Found **{len(results)}** conversation(s) matching your search")
 
-                # Pagination
-                items_per_page = 50
-                total_pages = max(1, len(results) // items_per_page + (1 if len(results) % items_per_page > 0 else 0))
-
-                # Page selector at top if more than one page
-                page = 1
-                if total_pages > 1:
-                    st.markdown(f"**Total: {len(results)} results ({total_pages} pages)**")
+                # Pagination - reduced to 20 per page for better performance
+                items_per_page = 20
+                total_pages = max(1, (len(results) + items_per_page - 1) // items_per_page)
 
                 # Use session state to track page
                 if 'search_page' not in st.session_state:
                     st.session_state.search_page = 1
+
+                # Reset to page 1 if search changed
+                if 'last_search' not in st.session_state or st.session_state.last_search != active_search:
+                    st.session_state.search_page = 1
+                    st.session_state.last_search = active_search
 
                 page = st.session_state.search_page
 
@@ -442,18 +488,28 @@ def main():
                 end_idx = min(start_idx + items_per_page, len(results))
 
                 # Display conversations
+                st.markdown(f"Showing results {start_idx + 1}-{end_idx}")
                 for idx in range(start_idx, end_idx):
                     result_num = idx + 1
                     display_conversation(results.iloc[idx], df_votes, result_num)
 
-                # Page selector at bottom
+                # Page navigation at bottom (same as top)
                 if total_pages > 1:
                     st.markdown("---")
-                    new_page = st.number_input("Page", min_value=1, max_value=total_pages, value=page, key="page_selector")
-                    if new_page != page:
-                        st.session_state.search_page = new_page
-                        st.rerun()
-                    st.markdown(f"Showing {start_idx + 1}-{end_idx} of {len(results)} results")
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col1:
+                        if st.button("⬅️ Previous", disabled=(page == 1), key="prev_bottom", use_container_width=True):
+                            st.session_state.search_page = max(1, page - 1)
+                            st.rerun()
+                    with col2:
+                        new_page = st.number_input("Jump to page", min_value=1, max_value=total_pages, value=page, key="page_selector")
+                        if new_page != page:
+                            st.session_state.search_page = new_page
+                            st.rerun()
+                    with col3:
+                        if st.button("Next ➡️", disabled=(page == total_pages), key="next_bottom", use_container_width=True):
+                            st.session_state.search_page = min(total_pages, page + 1)
+                            st.rerun()
             else:
                 st.warning("No conversations found matching your search. Try different keywords or adjust filters.")
     else:
@@ -482,14 +538,55 @@ def main():
                 filtered_df['conversation_pair_id'].isin(df_votes['conversation_pair_id'])
             ]
 
-        # Now sample from filtered dataset
-        num_random = 50
+        # Sample more for pagination
+        num_random = 100
         if len(filtered_df) > 0:
-            results = filtered_df.sample(n=min(num_random, len(filtered_df)))
+            # Sample once and paginate
+            if 'random_sample' not in st.session_state or len(st.session_state.get('random_sample', [])) == 0:
+                st.session_state.random_sample = filtered_df.sample(n=min(num_random, len(filtered_df)))
 
-            # Display random conversations
-            for idx, (_, row) in enumerate(results.iterrows(), 1):
-                display_conversation(row, df_votes, idx)
+            results = st.session_state.random_sample
+
+            # Pagination for random conversations
+            items_per_page = 20
+            total_pages = max(1, (len(results) + items_per_page - 1) // items_per_page)
+
+            # Use session state to track page
+            if 'random_page' not in st.session_state:
+                st.session_state.random_page = 1
+
+            page = st.session_state.random_page
+
+            start_idx = (page - 1) * items_per_page
+            end_idx = min(start_idx + items_per_page, len(results))
+
+            # Display conversations
+            st.markdown(f"Showing {start_idx + 1}-{end_idx} of {len(results)} random conversations")
+            for idx in range(start_idx, end_idx):
+                display_conversation(results.iloc[idx], df_votes, idx + 1)
+
+            # Refresh button and page navigation at bottom
+            st.markdown("---")
+            col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+            with col1:
+                if st.button("🔄 Load New Random", use_container_width=True):
+                    st.session_state.random_sample = filtered_df.sample(n=min(num_random, len(filtered_df)))
+                    st.session_state.random_page = 1
+                    st.rerun()
+            with col2:
+                if total_pages > 1 and st.button("⬅️ Previous", disabled=(page == 1), key="random_prev_bottom", use_container_width=True):
+                    st.session_state.random_page = max(1, page - 1)
+                    st.rerun()
+            with col3:
+                if total_pages > 1:
+                    new_page = st.number_input("Page", min_value=1, max_value=total_pages, value=page, key="random_page_selector")
+                    if new_page != page:
+                        st.session_state.random_page = new_page
+                        st.rerun()
+            with col4:
+                if total_pages > 1 and st.button("Next ➡️", disabled=(page == total_pages), key="random_next_bottom", use_container_width=True):
+                    st.session_state.random_page = min(total_pages, page + 1)
+                    st.rerun()
         else:
             st.warning("No conversations match the selected filters.")
 

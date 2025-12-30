@@ -40,23 +40,50 @@ st.markdown("""
 
 @st.cache_data
 def load_conversations(sample_size=10000):
-    """Load conversations dataset"""
+    """Load conversations dataset with memory optimizations"""
     import os
     import sys
+
+    # Get HuggingFace token from environment or Streamlit secrets
+    token = os.environ.get("HF_TOKEN")
+    if not token and hasattr(st, 'secrets') and 'HF_TOKEN' in st.secrets:
+        token = st.secrets["HF_TOKEN"]
 
     # Suppress progress bars to avoid BrokenPipeError
     old_stderr = sys.stderr
     sys.stderr = open(os.devnull, 'w')
 
     try:
+        # Only load columns needed for visualizations
+        columns_needed = [
+            'conversation_pair_id', 'model_a_name', 'model_b_name',
+            'timestamp', 'categories', 'conv_turns'
+        ]
+
         if sample_size is None:
-            # Load full dataset
-            ds = load_dataset('ministere-culture/comparia-conversations', split='train')
+            # Load full dataset with only needed columns
+            ds = load_dataset('ministere-culture/comparia-conversations', split='train', token=token)
         else:
             # Load sample
-            ds = load_dataset('ministere-culture/comparia-conversations', split=f'train[:{sample_size}]')
+            ds = load_dataset('ministere-culture/comparia-conversations', split=f'train[:{sample_size}]', token=token)
+
+        # Convert to pandas and optimize memory
         df = ds.to_pandas()
+
+        # Keep only needed columns if they exist
+        available_cols = [col for col in columns_needed if col in df.columns]
+        if available_cols:
+            df = df[available_cols]
+
+        # Optimize data types to reduce memory usage
         df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+        # Convert model names to category type (saves memory for repeated values)
+        if 'model_a_name' in df.columns:
+            df['model_a_name'] = df['model_a_name'].astype('category')
+        if 'model_b_name' in df.columns:
+            df['model_b_name'] = df['model_b_name'].astype('category')
+
         return df
     finally:
         sys.stderr.close()
@@ -68,20 +95,25 @@ def load_votes():
     import os
     import sys
 
+    # Get HuggingFace token from environment or Streamlit secrets
+    token = os.environ.get("HF_TOKEN")
+    if not token and hasattr(st, 'secrets') and 'HF_TOKEN' in st.secrets:
+        token = st.secrets["HF_TOKEN"]
+
     # Suppress progress bars to avoid BrokenPipeError
     old_stderr = sys.stderr
     sys.stderr = open(os.devnull, 'w')
 
     try:
         # Load votes dataset
-        ds_votes = load_dataset('ministere-culture/comparia-votes', split='train')
+        ds_votes = load_dataset('ministere-culture/comparia-votes', split='train', token=token)
         df_votes = ds_votes.to_pandas()
         df_votes['timestamp'] = pd.to_datetime(df_votes['timestamp'])
         df_votes['source'] = 'votes'
         votes_cols = df_votes[['conversation_pair_id', 'chosen_model_name', 'both_equal', 'source']]
 
         # Load reactions dataset
-        ds_reactions = load_dataset('ministere-culture/comparia-reactions', split='train')
+        ds_reactions = load_dataset('ministere-culture/comparia-reactions', split='train', token=token)
         df_reactions = ds_reactions.to_pandas()
         df_reactions['timestamp'] = pd.to_datetime(df_reactions['timestamp'])
         df_reactions['source'] = 'reactions'
@@ -124,14 +156,15 @@ def main():
         # Sample size selector
         sample_size_option = st.selectbox(
             "Dataset Sample Size",
-            options=["1,000", "5,000", "10,000", "25,000", "50,000", "100,000", "250,000", "500,000", "Full Dataset"],
+            options=["1,000", "5,000", "10,000", "25,000", "50,000", "100,000", "250,000", "500,000", "Full Dataset (~360k)"],
             index=2,  # Default to 10,000
             help="Number of conversations to load. Higher values provide more data but may slow down the app."
         )
 
         # Convert option to sample size
-        if sample_size_option == "Full Dataset":
+        if "Full Dataset" in sample_size_option:
             sample_size = None  # Will load entire dataset
+            st.warning("⚠️ Loading the full dataset (~360k conversations) may take 2-3 minutes and use significant memory.")
         else:
             sample_size = int(sample_size_option.replace(",", ""))
 
@@ -140,23 +173,23 @@ def main():
         # Dataset links
         st.markdown("### 📂 Access Raw Datasets")
         st.link_button(
-            "compar:IA-conversations",
+            "📊 Conversations Dataset",
             "https://huggingface.co/datasets/ministere-culture/comparia-conversations",
             use_container_width=True
         )
         st.link_button(
-            "compar:IA-votes",
+            "🗳️ Votes Dataset",
             "https://huggingface.co/datasets/ministere-culture/comparia-votes",
             use_container_width=True
         )
         st.link_button(
-            "compar:IA-reactions",
+            "👍 Reactions Dataset",
             "https://huggingface.co/datasets/ministere-culture/comparia-reactions",
             use_container_width=True
         )
 
         st.markdown("---")
-        st.image("english-logo.png", use_container_width=True)
+        st.image("english-logo.png", use_column_width=True)
 
     # Title
     st.markdown('<div class="main-title">Explore compar:IA datasets</div>', unsafe_allow_html=True)
