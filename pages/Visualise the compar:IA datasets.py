@@ -153,13 +153,22 @@ def main():
     with st.sidebar:
         st.header("⚙️ Settings")
 
+        # Initialize sample size in session state if not exists
+        if 'sample_size_index' not in st.session_state:
+            st.session_state.sample_size_index = 2  # Default to 10,000
+
         # Sample size selector
         sample_size_option = st.selectbox(
             "Dataset Sample Size",
             options=["1,000", "5,000", "10,000", "25,000", "50,000", "100,000", "250,000", "500,000", "Full Dataset (~360k)"],
-            index=2,  # Default to 10,000
-            help="Number of conversations to load. Higher values provide more data but may slow down the app."
+            index=st.session_state.sample_size_index,
+            help="Number of conversations to load. Higher values provide more data but may slow down the app.",
+            key="sample_size_selector_viz"
         )
+
+        # Update session state based on selection
+        options_list = ["1,000", "5,000", "10,000", "25,000", "50,000", "100,000", "250,000", "500,000", "Full Dataset (~360k)"]
+        st.session_state.sample_size_index = options_list.index(sample_size_option)
 
         # Convert option to sample size
         if "Full Dataset" in sample_size_option:
