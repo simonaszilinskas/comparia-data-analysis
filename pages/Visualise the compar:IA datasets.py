@@ -39,7 +39,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 @st.cache_data
-def load_conversations():
+def load_conversations(sample_size=50000):
     """Load conversations dataset"""
     import os
     import sys
@@ -49,7 +49,7 @@ def load_conversations():
     sys.stderr = open(os.devnull, 'w')
 
     try:
-        ds = load_dataset('ministere-culture/comparia-conversations', split='train')
+        ds = load_dataset('ministere-culture/comparia-conversations', split=f'train[:{sample_size}]')
         df = ds.to_pandas()
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         return df
@@ -139,8 +139,9 @@ def main():
     st.markdown('<div class="subtitle">Dataset visualizations and statistics</div>', unsafe_allow_html=True)
 
     # Load data
+    sample_size = 50000
     with st.spinner("Loading data..."):
-        df = load_conversations()
+        df = load_conversations(sample_size)
 
     # Basic statistics
     st.markdown("### 📈 Dataset Overview")
