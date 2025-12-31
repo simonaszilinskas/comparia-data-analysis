@@ -311,7 +311,7 @@ def display_conversation(row, votes_df, result_num=None):
 
         # Display metadata at the bottom
         st.markdown("---")
-        meta_col1, meta_col2, meta_col3 = st.columns(3)
+        meta_col1, meta_col2, meta_col3, meta_col4 = st.columns(4)
 
         with meta_col1:
             # Timestamp
@@ -328,6 +328,10 @@ def display_conversation(row, votes_df, result_num=None):
         with meta_col3:
             # Conversation ID
             st.caption(f"🆔 {row['conversation_pair_id']}")
+
+        with meta_col4:
+            # Private data flag link
+            st.caption("🚩 [Private data? Flag it here](https://adtk8x51mbw.eu.typeform.com/to/B49aloXZ)")
 
 def main():
     # Title
